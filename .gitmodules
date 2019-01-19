@@ -1,0 +1,4 @@
+[submodule "Packages/com.github.neuecc.unirx"]
+	path = Packages/com.github.neuecc.unirx
+	url = https://github.com/KappaBull/UnityNpm.git
+	branch = UniRx/6.2.2
