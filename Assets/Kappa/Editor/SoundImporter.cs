@@ -20,7 +20,7 @@ namespace Kappa.Editor
       audioImporter.forceToMono = true;
       audioImporter.loadInBackground = true;
       audioImporter.preloadAudioData = false;
-      if (assetPath.Contains("BGM"))
+      if (assetPath.Contains("Bgm"))
       {
         audioImporter.defaultSampleSettings = new AudioImporterSampleSettings()
         {
@@ -32,26 +32,13 @@ namespace Kappa.Editor
       }
       else
       {
-        if (assetPath.Contains("Title.mp3"))
+        audioImporter.defaultSampleSettings = new AudioImporterSampleSettings()
         {
-          audioImporter.defaultSampleSettings = new AudioImporterSampleSettings()
-          {
-            loadType = AudioClipLoadType.Streaming,
-            compressionFormat = AudioCompressionFormat.Vorbis,
-            quality = 100,
-            sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate,
-          };
-        }
-        else
-        {
-          audioImporter.defaultSampleSettings = new AudioImporterSampleSettings()
-          {
-            loadType = AudioClipLoadType.CompressedInMemory,
-            compressionFormat = AudioCompressionFormat.Vorbis,
-            quality = 100,
-            sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate,
-          };
-        }
+          loadType = AudioClipLoadType.CompressedInMemory,
+          compressionFormat = AudioCompressionFormat.Vorbis,
+          quality = 100,
+          sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate,
+        };
       }
 
     }
