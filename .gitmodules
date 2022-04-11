@@ -1,8 +1,0 @@
-[submodule "Packages/com.github.neuecc.unirx"]
-	path = Packages/com.github.neuecc.unirx
-	url = https://github.com/KappaBull/UnityNpm.git
-	branch = UniRx/6.2.2
-[submodule "Packages/com.github.svermeulen.zenject"]
-	path = Packages/com.github.svermeulen.zenject
-	url = https://github.com/KappaBull/UnityNpm.git
-	branch = Zenject/7.3.0

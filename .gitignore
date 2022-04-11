@@ -48,3 +48,9 @@ Thumbs.db
 
 # VSCode
 .vscode/
+
+#AssetBundleGraph
+Assets/AssetGraph/Cache*
+Assets/AssetGraph/Generated*
+Assets/AssetGraph/AssetBundles/Cache*
+Assets/AssetGraph/AssetBundles/Generated*
