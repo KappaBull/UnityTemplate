@@ -43,6 +43,8 @@ jobs:
         with:
           buildMethod: BuildCI.CompileErrorCheckCMD
           targetPlatform: StandaloneWindows64
+      - name: Docker Purge
+        run: docker image prune --force
       - uses: game-ci/unity-builder@v2
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
