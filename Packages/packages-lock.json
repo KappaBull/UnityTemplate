@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.cysharp.unitask": {
+      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "9e2163616b9c527fa9461544e2bcc5f93fd12d83"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -14,13 +21,6 @@
     },
     "com.unity.assetbundlebrowser": {
       "version": "1.7.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.assetgraph": {
-      "version": "1.7.2-preview",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -117,6 +117,13 @@
         "com.unity.modules.xr": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "jp.setchi.fancyscrollview": {
+      "version": "https://github.com/setchi/FancyScrollView.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "e5d10d3e5961848f93be43c2911344750b509a88"
     },
     "nuget.mono-cecil": {
       "version": "0.1.6-preview",
