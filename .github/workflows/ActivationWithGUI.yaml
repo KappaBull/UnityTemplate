@@ -1,5 +1,5 @@
 ﻿name: Acquire activation file with GUI
-
+# https://license.unity3d.com/manual
 on:
   workflow_dispatch:
     inputs:
