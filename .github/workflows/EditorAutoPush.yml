@@ -51,6 +51,10 @@ jobs:
           ref: ${{ github.head_ref }}
           skip_fetch: false    
           skip_checkout: false
+        continue-on-error: true
+      - name: "Run if no changes have been detected"
+        if: steps.auto-commit-action.outputs.changes_detected == 'false'
+        run: echo "No Changes or Commited"
       # - name: commit & push
       #   if: steps.diff.outcome == 'failure'
       #   run: |
