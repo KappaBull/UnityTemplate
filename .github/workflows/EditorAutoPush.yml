@@ -48,6 +48,9 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "[GithubActions] AutoUpdate"
+          ref: ${{ github.head_ref }}
+          skip_fetch: false    
+          skip_checkout: false
       # - name: commit & push
       #   if: steps.diff.outcome == 'failure'
       #   run: |
