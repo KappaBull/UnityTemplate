@@ -8,23 +8,23 @@ using UnityEngine;
 public class BuildCI : Editor
 {
     private static readonly string Eol = Environment.NewLine;
-    private static readonly List<BuildTarget> targetPlatforms = new List<BuildTarget> {
-        BuildTarget.StandaloneWindows64, 
-        BuildTarget.StandaloneOSX,
-        BuildTarget.Android,
-        BuildTarget.iOS
-    };
+    // private static readonly List<BuildTarget> targetPlatforms = new List<BuildTarget> {
+    //     BuildTarget.StandaloneWindows64, 
+    //     BuildTarget.StandaloneOSX,
+    //     BuildTarget.Android,
+    //     BuildTarget.iOS
+    // };
     /// <summary>
     /// コンパイラーチェック、AutoUpdate用
     /// </summary>
     private static void CompileErrorCheckCMD()
     {
         Debug.Log("UnityVersion : " + Application.unityVersion );
-        foreach (var target in targetPlatforms)
-        {
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildPipeline.GetBuildTargetGroup(target), target);
-            Debug.Log("Platform : " + EditorUserBuildSettings.activeBuildTarget + " is OK");
-        }
+        // foreach (var target in targetPlatforms)
+        // {
+            // EditorUserBuildSettings.SwitchActiveBuildTarget(BuildPipeline.GetBuildTargetGroup(target), target);
+        Debug.Log("Platform : " + EditorUserBuildSettings.activeBuildTarget + " is OK");
+        // }
     }
     
     /// <summary>
