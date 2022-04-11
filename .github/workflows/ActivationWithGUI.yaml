@@ -1,5 +1,5 @@
 ﻿name: Acquire activation file with GUI
-# https://license.unity3d.com/manual
+
 on:
   workflow_dispatch:
     inputs:
@@ -12,15 +12,15 @@ jobs:
     name: Request manual activation file 🔑
     runs-on: ubuntu-latest
     steps:
-    
       - name: Request manual activation file
         id: getManualLicenseFile
         uses: game-ci/unity-request-activation-file@v2
         with:
           unityVersion: ${{ github.event.inputs.unityVersion }}
-          
       - name: Expose as artifact
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.getManualLicenseFile.outputs.filePath }}
           path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+      - name: ActivationURL
+        run: echo "ActivationURL https://license.unity3d.com/manual"

@@ -46,6 +46,7 @@ jobs:
       #     git diff --name-only --exit-code
       #   continue-on-error: true
       - uses: stefanzweifel/git-auto-commit-action@v4
+        id: autocommit
         with:
           commit_message: "[GithubActions] AutoUpdate"
           ref: ${{ github.head_ref }}
@@ -53,7 +54,7 @@ jobs:
           skip_checkout: false
         continue-on-error: true
       - name: "Run if no changes have been detected"
-        if: steps.auto-commit-action.outputs.changes_detected == 'false'
+        if: steps.autocommit.outcome == 'failure'
         run: echo "No Changes or Commited"
       # - name: commit & push
       #   if: steps.diff.outcome == 'failure'
