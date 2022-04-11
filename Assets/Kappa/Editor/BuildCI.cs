@@ -20,11 +20,7 @@ public class BuildCI : Editor
     private static void CompileErrorCheckCMD()
     {
         Debug.Log("UnityVersion : " + Application.unityVersion );
-        // foreach (var target in targetPlatforms)
-        // {
-            // EditorUserBuildSettings.SwitchActiveBuildTarget(BuildPipeline.GetBuildTargetGroup(target), target);
         Debug.Log("Platform : " + EditorUserBuildSettings.activeBuildTarget + " is OK");
-        // }
     }
     
     /// <summary>
