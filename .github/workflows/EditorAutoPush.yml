@@ -28,8 +28,8 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: Library
-          key: Library-AutoPush
-          restore-keys: Library-AutoPush
+          key: Library-${{ matrix.platform }}
+          restore-keys: Library-${{ matrix.platform }}
       - uses: game-ci/unity-builder@v2
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
@@ -39,12 +39,12 @@ jobs:
         with:
           buildMethod: BuildCI.CompileErrorCheckCMD
           targetPlatform: ${{ matrix.platform }}
-      - name: Diff
-        id: diff
-        run: |
-          git add -N -v .
-          git diff --name-only --exit-code
-        continue-on-error: true
+      # - name: Diff
+      #   id: diff
+      #   run: |
+      #     git add -N -v .
+      #     git diff --name-only --exit-code
+      #   continue-on-error: true
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "[GithubActions] AutoUpdate"
