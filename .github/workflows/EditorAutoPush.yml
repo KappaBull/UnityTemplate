@@ -25,11 +25,13 @@ jobs:
         with:
           lfs: true
           ref: ${{ github.head_ref }}
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: Library
-          key: Library-${{ matrix.platform }}
-          restore-keys: Library-${{ matrix.platform }}
+          key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-build-${{ matrix.targetPlatform }}-
+            Library-build-
       - uses: game-ci/unity-builder@v2
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
