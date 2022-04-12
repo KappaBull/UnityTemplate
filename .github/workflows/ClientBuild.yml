@@ -26,13 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         targetPlatform:
-          - StandaloneOSX # Build a macOS standalone (Intel 64-bit).
-          - StandaloneWindows # Build a Windows standalone.
-          - StandaloneWindows64 # Build a Windows 64-bit standalone.
           - iOS # Build an iOS player.
           - Android # Build an Android .apk.
-          # - StandaloneLinux64
-          # - WebGL
+          - StandaloneLinux64
+          - WebGL
     steps:
       - name: Free Disk Space for Android
         if: matrix.targetPlatform == 'Android'
@@ -86,13 +83,13 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
-      - uses: actions/cache@v3
-        with:
-          path: Library
-          key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
-          restore-keys: |
-            Library-build-${{ matrix.targetPlatform }}-
-            Library-build-
+      # - uses: actions/cache@v3
+      #   with:
+      #     path: Library
+      #     key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+      #     restore-keys: |
+      #       Library-build-${{ matrix.targetPlatform }}-
+      #       Library-build-
       - name: Build Unity Project
         id: build
         uses: game-ci/unity-builder@v2
@@ -124,13 +121,13 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
-      - uses: actions/cache@v3
-        with:
-          path: Library
-          key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
-          restore-keys: |
-            Library-build-${{ matrix.targetPlatform }}-
-            Library-build-
+      # - uses: actions/cache@v3
+      #   with:
+      #     path: Library
+      #     key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+      #     restore-keys: |
+      #       Library-build-${{ matrix.targetPlatform }}-
+      #       Library-build-
       - name: Build Unity Project
         id: build
         uses: game-ci/unity-builder@v2
