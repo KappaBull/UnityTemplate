@@ -35,11 +35,13 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: Library
-          key: Library-${{ matrix.targetPlatform }}
-          restore-keys: Library-${{ matrix.targetPlatform }}
+          key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-build-${{ matrix.targetPlatform }}-
+            Library-build-
       - uses: game-ci/unity-builder@v2
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
@@ -73,8 +75,10 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: Library
-          key: Library-${{ matrix.targetPlatform }}
-          restore-keys: Library-${{ matrix.targetPlatform }}
+          key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-build-${{ matrix.targetPlatform }}-
+            Library-build-
       - name: Build Unity Project
         id: build
         uses: game-ci/unity-builder@v2
@@ -109,8 +113,10 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: Library
-          key: Library-${{ matrix.targetPlatform }}
-          restore-keys: Library-${{ matrix.targetPlatform }}
+          key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-build-${{ matrix.targetPlatform }}-
+            Library-build-
       - name: Build Unity Project
         id: build
         uses: game-ci/unity-builder@v2
