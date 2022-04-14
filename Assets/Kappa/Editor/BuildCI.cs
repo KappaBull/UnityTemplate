@@ -23,42 +23,23 @@ public class BuildCI : Editor
     /// </summary>
     private static void BuildClientCMD()
     {
-        //CMDオプション定義
-        const string exportPath = "-exportPath";
-        string[] targetCmd = {exportPath};
-        //CMD取得
-        var cmd = Environment.GetCommandLineArgs();
-        var maxCmdLength = cmd.Length;
-        
-        //CMDからデータ取得とパラメータ反映
-        var buildPath = "";
-        for (int i = 0; i < maxCmdLength; i++)
+        var nowTarget = EditorUserBuildSettings.activeBuildTarget;
+        var buildPath = "build-" + nowTarget.ToString();
+        switch (nowTarget)
         {
-            if (targetCmd.Any(c => cmd[i] == c))
-            {
-                switch (cmd[i])
-                {
-                    //シーンリスト編集とビルドオプションを変更
-                    case exportPath:
-                        buildPath = cmd[i+1];
-                        break;
-                }
-            }
-        } 
+            case BuildTarget.Android:
+                break;
+            case BuildTarget.StandaloneWindows:
+            case BuildTarget.StandaloneWindows64:
+                buildPath = buildPath + "/" + PlayerSettings.productName + ".exe";
+                break;
+        }
         
-        //ビルド
-        Debug.Log("BuildLocations : " + buildPath);
-        Build(buildPath);
-    }
-
-    private static void Build(string filePath)
-    {
-        var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(s => s.path).ToArray();
         var buildPlayerOptions = new BuildPlayerOptions
         {
-            scenes = scenes,
-            target = EditorUserBuildSettings.activeBuildTarget,
-            locationPathName = filePath,
+            scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(s => s.path).ToArray(),
+            target = nowTarget,
+            locationPathName = buildPath,
         };
 
         var buildSummary = BuildPipeline.BuildPlayer(buildPlayerOptions).summary;
