@@ -28,6 +28,7 @@ public class BuildCI : Editor
         switch (nowTarget)
         {
             case BuildTarget.Android:
+                buildPath = buildPath + "/" + PlayerSettings.productName + (EditorUserBuildSettings.buildAppBundle ? ".aab" : ".apk");
                 break;
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
