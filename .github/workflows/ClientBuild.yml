@@ -67,7 +67,7 @@ jobs:
         run: ls -la
       - uses: actions/upload-artifact@v3
         with:
-          name: Build-${{ matrix.targetPlatform }}
+          name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
           retention-days: 14
   buildWithWindows:
@@ -108,7 +108,7 @@ jobs:
         run: ls
       - uses: actions/upload-artifact@v3
         with:
-          name: Build-${{ matrix.targetPlatform }}
+          name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
           retention-days: 14
   buildWithMac:    
@@ -148,6 +148,33 @@ jobs:
         run: ls -la
       - uses: actions/upload-artifact@v3
         with:
-          name: Build-${{ matrix.targetPlatform }}
+          name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
+          retention-days: 14
+  packageWithMac:
+    name: Package for ${{ matrix.targetPlatform }}
+    needs: buildWithMac
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - StandaloneOSX
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
+          path: ~/Build-${{ matrix.targetPlatform }}
+      - name: Setup for StandaloneOSX
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          npm install --global create-dmg
+      - name: Create dmg
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          create-dmg productName.dmg ~/Build-${{ matrix.targetPlatform }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: productName-${{ github.run_number }}.dmg
+          path: productName.dmg
           retention-days: 14
