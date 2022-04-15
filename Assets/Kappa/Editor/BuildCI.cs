@@ -34,6 +34,10 @@ public class BuildCI : Editor
             case BuildTarget.StandaloneWindows64:
                 buildPath = buildPath + "/" + PlayerSettings.productName + ".exe";
                 break;
+            case BuildTarget.StandaloneOSX:
+            case BuildTarget.StandaloneLinux64:
+                buildPath = buildPath + "/" + PlayerSettings.productName;
+                break;
         }
         
         var buildPlayerOptions = new BuildPlayerOptions
