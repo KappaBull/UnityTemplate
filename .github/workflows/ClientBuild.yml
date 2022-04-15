@@ -63,6 +63,8 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
           # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
+      - name: check dir
+        run: ls -la
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}
@@ -102,6 +104,8 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
           # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
+      - name: check dir
+        run: ls -la
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}
@@ -140,6 +144,8 @@ jobs:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
           # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
+      - name: check dir
+        run: ls -la
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}
