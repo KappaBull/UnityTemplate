@@ -24,7 +24,7 @@ public class BuildCI : Editor
     private static void BuildClientCMD()
     {
         var nowTarget = EditorUserBuildSettings.activeBuildTarget;
-        var buildPath = "build-" + nowTarget.ToString();
+        var buildPath = "Build-" + nowTarget.ToString();
         switch (nowTarget)
         {
             case BuildTarget.Android:
