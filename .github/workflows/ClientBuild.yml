@@ -105,7 +105,7 @@ jobs:
           buildMethod: BuildCI.BuildClientCMD
           # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
       - name: check dir
-        run: ls -la
+        run: ls
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}
@@ -145,7 +145,7 @@ jobs:
           buildMethod: BuildCI.BuildClientCMD
           # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
       - name: check dir
-        run: ls
+        run: ls -la
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}
