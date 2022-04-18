@@ -169,10 +169,12 @@ jobs:
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           npm install --global create-dmg
+          create-dmg --version
+          ls -la
       - name: Create dmg
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
-          create-dmg productName.dmg ~/Build-${{ matrix.targetPlatform }}
+          create-dmg "productName.dmg" "Build-${{ matrix.targetPlatform }}/"
       - uses: actions/upload-artifact@v3
         with:
           name: productName-${{ github.run_number }}.dmg
