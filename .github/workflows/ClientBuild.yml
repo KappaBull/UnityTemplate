@@ -164,17 +164,17 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
-          path: ~/Build-${{ matrix.targetPlatform }}
       - name: Setup for StandaloneOSX
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           npm install --global create-dmg
           create-dmg --version
-          ls -la
       - name: Create dmg
         if: matrix.targetPlatform == 'StandaloneOSX'
+        working-directory: ~/
         run: |
-          create-dmg "productName.dmg" "Build-${{ matrix.targetPlatform }}/"
+          ls -la
+          create-dmg "productName.dmg" "Build-${{ matrix.targetPlatform }}-${{ github.run_number }}/"
       - uses: actions/upload-artifact@v3
         with:
           name: productName-${{ github.run_number }}.dmg
