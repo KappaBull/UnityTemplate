@@ -161,7 +161,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
-          path: Build-${{ matrix.targetPlatform }}
       - name: Setup for StandaloneOSX
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
@@ -171,9 +170,9 @@ jobs:
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
           ls -la
-          create-dmg "productName.dmg" "Build-${{ matrix.targetPlatform }}/"
+          create-dmg UnityTemplate.app
       - uses: actions/upload-artifact@v3
         with:
-          name: productName-${{ github.run_number }}.dmg
-          path: productName.dmg
+          name: UnityTemplate-${{ github.run_number }}.dmg
+          path: UnityTemplate.dmg
           retention-days: 14
