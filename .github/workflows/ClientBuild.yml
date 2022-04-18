@@ -62,7 +62,6 @@ jobs:
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
-          # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
       - name: check dir
         run: ls -la
       - uses: actions/upload-artifact@v3
@@ -103,7 +102,6 @@ jobs:
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
-          # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
       - name: check dir
         run: ls
       - uses: actions/upload-artifact@v3
@@ -143,7 +141,6 @@ jobs:
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
-          # customParameters: -exportPath Build-${{ matrix.targetPlatform }}
       - name: check dir
         run: ls -la
       - uses: actions/upload-artifact@v3
@@ -171,7 +168,6 @@ jobs:
           create-dmg --version
       - name: Create dmg
         if: matrix.targetPlatform == 'StandaloneOSX'
-        working-directory: ~/
         run: |
           ls -la
           create-dmg "productName.dmg" "Build-${{ matrix.targetPlatform }}-${{ github.run_number }}/"
