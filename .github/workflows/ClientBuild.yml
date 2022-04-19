@@ -9,15 +9,25 @@ on:
       - 'Packages/**'
       - 'ProjectSettings/**'
       - ".github/workflows/ClientBuild.yml"
-  release:
+  pull_request:
     types:
-      - published
-  workflow_dispatch:
-    inputs:
-      workflow_mode:
-        description: '[release] [Android, iOS, StandaloneWindows64, StandaloneOSX]'
-        required: false
-        default: ''
+      - opened
+    branches:    
+      - develop
+    paths:
+      - 'Assets/**'
+      - 'Packages/**'
+      - 'ProjectSettings/**'
+      - ".github/workflows/ClientBuild.yml"
+  # release:
+  #   types:
+  #     - published
+  # workflow_dispatch:
+  #   inputs:
+  #     workflow_mode:
+  #       description: '[release] [Android, iOS, StandaloneWindows64, StandaloneOSX]'
+  #       required: false
+  #       default: ''
 jobs:
   buildWithLinux:
     name: Build for ${{ matrix.targetPlatform }}
@@ -64,6 +74,10 @@ jobs:
           buildMethod: BuildCI.BuildClientCMD
       - name: check dir
         run: ls -la
+      - name: check build dir
+        run: ls build -la
+      - name: check build dir
+        run: ls Build-${{ matrix.targetPlatform }} -la
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
@@ -148,31 +162,32 @@ jobs:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
           retention-days: 14
-  packageWithMac:
-    name: Package for ${{ matrix.targetPlatform }}
-    needs: buildWithMac
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        targetPlatform:
-          - StandaloneOSX
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
-      - name: Setup for StandaloneOSX
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        run: |
-          npm install --global create-dmg
-          create-dmg --version
-      - name: Create dmg
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        run: |
-          ls -la
-          create-dmg UnityTemplate.app
-      - uses: actions/upload-artifact@v3
-        with:
-          name: UnityTemplate-${{ github.run_number }}.dmg
-          path: UnityTemplate.dmg
-          retention-days: 14
+  # packageWithMac:
+  #   name: Package for ${{ matrix.targetPlatform }}
+  #   needs: buildWithMac
+  #   runs-on: macos-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       targetPlatform:
+  #         - StandaloneOSX
+  #         - iOS
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
+  #     - name: Setup for StandaloneOSX
+  #       if: matrix.targetPlatform == 'StandaloneOSX'
+  #       run: |
+  #         npm install --global create-dmg
+  #         create-dmg --version
+  #     - name: Create dmg
+  #       if: matrix.targetPlatform == 'StandaloneOSX'
+  #       run: |
+  #         ls -la
+  #         create-dmg UnityTemplate.app
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: UnityTemplate-${{ github.run_number }}.dmg
+  #         path: UnityTemplate.dmg
+  #         retention-days: 14
