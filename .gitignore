@@ -48,6 +48,10 @@ Thumbs.db
 # VSCode
 .vscode/
 
+# Jetbrain Rider Cache
+.idea/
+Assets/Plugins/Editor/JetBrains*
+
 #AssetBundleGraph
 Assets/AssetGraph/Cache*
 Assets/AssetGraph/Generated*
