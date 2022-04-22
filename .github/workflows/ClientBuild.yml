@@ -10,10 +10,8 @@ on:
       - 'ProjectSettings/**'
       - ".github/workflows/ClientBuild.yml"
   pull_request:
-    types:
-      - opened
     branches:    
-      - develop
+      - master
     paths:
       - 'Assets/**'
       - 'Packages/**'
