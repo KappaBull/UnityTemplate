@@ -46,8 +46,6 @@ jobs:
         with:
           commit_message: "[GithubActions] AutoUpdate"
           ref: ${{ github.head_ref }}
-          skip_fetch: false    
-          skip_checkout: false
         continue-on-error: true
       - name: "Run if Commited have been detected"
         if: steps.autocommit.outcome == 'failure'
