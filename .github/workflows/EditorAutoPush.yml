@@ -2,8 +2,6 @@
 
 on:
   push:
-    # branches:
-    #   - "master"
     paths:
       - 'Assets/**'
       - 'Packages/**'
@@ -45,7 +43,6 @@ jobs:
         id: autocommit
         with:
           commit_message: "[GithubActions] AutoUpdate"
-          ref: ${{ github.head_ref }}
         continue-on-error: true
       - name: "Run if Commited have been detected"
         if: steps.autocommit.outcome == 'failure'
