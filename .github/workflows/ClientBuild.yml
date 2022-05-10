@@ -153,8 +153,8 @@ jobs:
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
           buildMethod: BuildCI.BuildClientCMD
-      - name: check dir
-        run: ls -la
+      - name: chmod
+        run: chmod +x Build-${{ matrix.targetPlatform }}/*.app/Contents/MacOS/*
       - uses: actions/upload-artifact@v3
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
