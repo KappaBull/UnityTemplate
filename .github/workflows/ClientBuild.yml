@@ -61,7 +61,7 @@ jobs:
           restore-keys: |
             Library-build-${{ matrix.targetPlatform }}-
             Library-build-
-      - uses: game-ci/unity-builder@v2.0.4
+      - uses: game-ci/unity-builder@v2.1.0
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
           # UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }} 
@@ -105,7 +105,7 @@ jobs:
             Library-build-
       - name: Build Unity Project
         id: build
-        uses: game-ci/unity-builder@v2.0.4
+        uses: game-ci/unity-builder@v2.1.0
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }} 
@@ -144,7 +144,7 @@ jobs:
             Library-build-
       - name: Build Unity Project
         id: build
-        uses: game-ci/unity-builder@v2.0.4
+        uses: game-ci/unity-builder@v2.1.0
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE_2020 }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }} 
