@@ -1,4 +1,4 @@
-﻿name: Acquire activation file with GUI
+name: Acquire activation file with GUI
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
         with:
           unityVersion: ${{ github.event.inputs.unityVersion }}
       - name: Expose as artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.getManualLicenseFile.outputs.filePath }}
           path: ${{ steps.getManualLicenseFile.outputs.filePath }}
