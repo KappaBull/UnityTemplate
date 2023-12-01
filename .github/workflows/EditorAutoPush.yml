@@ -1,4 +1,4 @@
-﻿name: EditorAutoPush
+name: EditorAutoPush
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
         with:
           buildMethod: BuildCI.CompileErrorCheckCMD
           targetPlatform: ${{ matrix.platform }}
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: stefanzweifel/git-auto-commit-action@v5
         id: autocommit
         with:
           commit_message: "[GithubActions] AutoUpdate"
