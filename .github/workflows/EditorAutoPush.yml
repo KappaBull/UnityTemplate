@@ -1,4 +1,4 @@
-﻿name: EditorAutoPush
+name: EditorAutoPush
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     steps:
       # DEBUG用情報
       - run: cat $GITHUB_EVENT_PATH
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           lfs: true
           ref: ${{ github.head_ref }}
