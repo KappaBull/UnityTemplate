@@ -76,7 +76,7 @@ jobs:
         run: ls build -la
       - name: check build dir
         run: ls Build-${{ matrix.targetPlatform }} -la
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
@@ -116,7 +116,7 @@ jobs:
           buildMethod: BuildCI.BuildClientCMD
       - name: check dir
         run: ls
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
@@ -155,7 +155,7 @@ jobs:
           buildMethod: BuildCI.BuildClientCMD
       # - name: chmod
       #   run: chmod +x Build-${{ matrix.targetPlatform }}/*.app/Contents/MacOS/*
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Build-${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: Build-${{ matrix.targetPlatform }}
@@ -184,7 +184,7 @@ jobs:
   #       run: |
   #         ls -la
   #         create-dmg UnityTemplate.app
-  #     - uses: actions/upload-artifact@v3
+  #     - uses: actions/upload-artifact@v4
   #       with:
   #         name: UnityTemplate-${{ github.run_number }}.dmg
   #         path: UnityTemplate.dmg
