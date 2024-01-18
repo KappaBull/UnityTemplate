@@ -1,4 +1,4 @@
-﻿name: EditorAutoPush
+name: EditorAutoPush
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
         with:
           lfs: true
           ref: ${{ github.head_ref }}
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: Library
           key: Library-build-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
