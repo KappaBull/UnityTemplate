@@ -49,20 +49,22 @@ jobs:
           echo "$HOME/.unity/bin" >> "$GITHUB_PATH"
           "$HOME/.unity/bin/unity" --version
 
-      - name: Activate Unity license
+      - name: Install GameCI CLI
+        id: gameci
+        uses: game-ci/cli@v0.1.72
+
+      - name: Activate Unity Personal license
         shell: bash
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE || secrets.UNITY_LICENSE_2020 }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [[ -z "${UNITY_LICENSE:-}" ]]; then
-            echo "::error::UNITY_LICENSE or UNITY_LICENSE_2020 secret is required"
+          if [[ -z "${UNITY_EMAIL:-}" || -z "${UNITY_PASSWORD:-}" ]]; then
+            echo "::error::UNITY_EMAIL and UNITY_PASSWORD secrets are required"
             exit 1
           fi
-          license_file="$RUNNER_TEMP/UnityLicense.ulf"
-          trap 'rm -f "$license_file"' EXIT
-          printf '%s' "$UNITY_LICENSE" > "$license_file"
-          unity license activate --file "$license_file" --non-interactive
+          game-ci activate . --targetPlatform StandaloneOSX --unityLicensingMethod personal
 
       - name: Run EditMode tests
         shell: bash
@@ -99,10 +101,12 @@ jobs:
           retention-days: 14
 
       - name: Return Unity license
-        if: always()
-        continue-on-error: true
+        if: always() && steps.gameci.outcome == 'success'
         shell: bash
-        run: unity license return --yes --non-interactive
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: game-ci return-license . --targetPlatform StandaloneOSX --unityLicensingMethod personal
 
   build-macos:
     name: Build and smoke test StandaloneOSX
@@ -127,10 +131,10 @@ jobs:
       - name: Build project with Production scheme
         uses: game-ci/unity-builder@v6
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE || secrets.UNITY_LICENSE_2020 }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
+          cliVersion: v0.1.72
           targetPlatform: StandaloneOSX
           buildMethod: BuildCI.BuildClientCMD
           customParameters: -buildMagicScheme Production
