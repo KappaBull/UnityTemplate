@@ -12,11 +12,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "Assets/**"
-      - "Packages/**"
-      - "ProjectSettings/**"
-      - ".github/workflows/**"
   workflow_dispatch:
 
 permissions:
