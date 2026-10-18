@@ -162,7 +162,7 @@ jobs:
           fi
 
           player_log="$RUNNER_TEMP/unity-player.log"
-          "$player_bin" -batchmode -nographics -logFile "$player_log" &
+          "$player_bin" -batchmode -logFile "$player_log" &
           player_pid=$!
           cleanup() {
             kill "$player_pid" 2>/dev/null || true
@@ -180,7 +180,7 @@ jobs:
             echo "::error::Built player produced no startup log"
             exit 1
           fi
-          if grep -Eiq 'Crash!!!|Aborting batchmode due to failure|Failed to initialize' "$player_log"; then
+          if grep -Eiq 'Crash!!!|Aborting batchmode due to failure|Failed to initialize|(^|[[:space:]])[[:alnum:]_.]*Exception:|Assertion failed|Shader error' "$player_log"; then
             echo "::error::Built player reported a startup failure"
             cat "$player_log"
             exit 1
