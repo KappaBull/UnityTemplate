@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -41,6 +42,26 @@ namespace UnityTemplate.Tests.PlayMode
             public string displayName;
             public int level;
             public int coins;
+        }
+
+        [Serializable]
+        public class DictionaryProgress
+        {
+            public Dictionary<string, int> items;
+            public int Level { get; set; }
+        }
+
+        [Serializable]
+        public class ObjectProgress
+        {
+            public SaveEnvironmentSettings settings;
+        }
+
+        [Serializable]
+        public class PrivateProgress
+        {
+            [SerializeField] private int score;
+            public int GetScore() => score;
         }
 
         [SetUp]
@@ -159,7 +180,8 @@ namespace UnityTemplate.Tests.PlayMode
         private SQLiteSaveBackend OpenBeta() => new SQLiteSaveBackend(Path.Combine(directory, "Beta"), configuration: configuration);
 
         private UniTask<BetaSaveImportResult> ImportBetaAsync(Func<string, string, int, bool> supportsVersion = null) =>
-            BetaSaveImport.ImportAsync(supportsVersion ?? ((slot, key, version) => version == 1), directory, configuration: configuration);
+            BetaSaveImport.ImportAsync(Path.Combine(directory, "Beta", "save-data.sqlite3"),
+                supportsVersion ?? ((slot, key, version) => version == 1), directory, configuration: configuration);
 
         private static async UniTask AssertImportFails<TException>(Func<UniTask<BetaSaveImportResult>> operation) where TException : Exception
         {
@@ -175,6 +197,40 @@ namespace UnityTemplate.Tests.PlayMode
             using (var beta = OpenBeta()) beta.Save("slot-1", "value", new byte[] { 1 });
             Assert.That(store.TryLoad("slot-1", "value", out _), Is.False);
         }
+
+        [UnityTest]
+        [Category("ProductionPlayer")]
+        public IEnumerator SelectedExportCanBeImportedWithoutAssumingBetaStorageLocation() => UniTask.ToCoroutine(async () =>
+        {
+            store.Dispose();
+            File.Delete(store.DatabasePath);
+            string selected;
+            using (var exported = new SQLiteSaveBackend(Path.Combine(directory, "selected-export"), "chosen-save", configuration))
+            {
+                exported.SaveJson("slot-1", "progress", new Progress { playerName = "引き継ぎ", level = 7 });
+                selected = exported.DatabasePath;
+            }
+            byte[] original = File.ReadAllBytes(selected);
+            Assert.That(Directory.Exists(Path.Combine(directory, "Beta")), Is.False);
+            var result = await BetaSaveImport.ImportAsync(selected, (slot, key, version) => version == 1,
+                directory, configuration: configuration);
+            Assert.That(result, Is.EqualTo(BetaSaveImportResult.Imported));
+            Assert.That(File.ReadAllBytes(selected), Is.EqualTo(original));
+            store = OpenStore();
+            Assert.That(store.TryLoadJson<Progress>("slot-1", "progress", out var imported), Is.True);
+            Assert.That(imported.level, Is.EqualTo(7));
+        });
+
+        [UnityTest]
+        public IEnumerator ImportRequiresExplicitAbsoluteSourceWithoutCreatingDestination() => UniTask.ToCoroutine(async () =>
+        {
+            store.Dispose();
+            File.Delete(store.DatabasePath);
+            foreach (string source in new[] { null, "", "relative.sqlite3" })
+                await AssertImportFails<ArgumentException>(() =>
+                    BetaSaveImport.ImportAsync(source, (slot, key, version) => true, directory, configuration: configuration));
+            Assert.That(File.Exists(store.DatabasePath), Is.False);
+        });
 
         [UnityTest]
         public IEnumerator ExplicitImportPreservesSourceAndDoesNotResynchronize() => UniTask.ToCoroutine(async () =>
@@ -448,6 +504,78 @@ namespace UnityTemplate.Tests.PlayMode
             Assert.Throws<InvalidDataException>(() => store.TryLoadJson<Progress>("slot-1", "progress", out _));
             Assert.That(store.TryLoad("slot-1", "progress", out var saved), Is.True);
             Assert.That(saved.Payload, Is.EqualTo(invalid));
+        }
+
+        [Test]
+        [Category("ProductionPlayer")]
+        public void DictionariesAndPropertiesRoundTripWithoutDroppingValues()
+        {
+            var progress = new DictionaryProgress
+            {
+                items = new Dictionary<string, int> { ["回復薬"] = 3, ["key"] = 1 },
+                Level = 8
+            };
+            store.SaveJson("slot-1", "progress", progress);
+            store.Dispose();
+            store = OpenStore();
+            Assert.That(store.TryLoadJson<DictionaryProgress>("slot-1", "progress", out var loaded), Is.True);
+            Assert.That(loaded.items, Is.EqualTo(progress.items));
+            Assert.That(loaded.Level, Is.EqualTo(8));
+        }
+
+        [Test]
+        [Category("ProductionPlayer")]
+        public void UnknownFieldsAreRejectedWithoutDiscardingSavedData()
+        {
+            byte[] payload = Encoding.UTF8.GetBytes("{\"playerName\":\"新版\",\"level\":8,\"coins\":777}");
+            store.Save("slot-1", "progress", payload);
+            Assert.Throws<InvalidDataException>(() => store.TryLoadJson<LegacyProgress>("slot-1", "progress", out _));
+            Assert.That(store.TryLoad("slot-1", "progress", out var retained), Is.True);
+            Assert.That(retained.Payload, Is.EqualTo(payload));
+        }
+
+        [Test]
+        [Category("ProductionPlayer")]
+        public void MultipleJsonValuesAreRejectedWithoutDiscardingSavedData()
+        {
+            byte[] payload = Encoding.UTF8.GetBytes("{\"level\":8}{\"level\":99}");
+            store.Save("slot-1", "progress", payload);
+            Assert.Throws<InvalidDataException>(() => store.TryLoadJson<Progress>("slot-1", "progress", out _));
+            Assert.That(store.TryLoad("slot-1", "progress", out var retained), Is.True);
+            Assert.That(retained.Payload, Is.EqualTo(payload));
+        }
+
+        [Test]
+        [Category("ProductionPlayer")]
+        public void NestedUnityObjectReferencesAreRejectedBeforeWriting()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                store.SaveJson("slot-1", "unsafe", new ObjectProgress { settings = configuration }));
+            Assert.That(store.TryLoad("slot-1", "unsafe", out _), Is.False);
+        }
+
+        [Test]
+        [Category("ProductionPlayer")]
+        public void LegacyJsonUtilityPayloadAndPrivateFieldsRemainReadable()
+        {
+            var legacy = JsonUtility.FromJson<PrivateProgress>("{\"score\":42}");
+            store.Save("slot-1", "legacy", Encoding.UTF8.GetBytes(JsonUtility.ToJson(legacy)));
+            Assert.That(store.TryLoadJson<PrivateProgress>("slot-1", "legacy", out var loaded), Is.True);
+            Assert.That(loaded.GetScore(), Is.EqualTo(42));
+            store.SaveJson("slot-1", "copied", loaded);
+            Assert.That(store.TryLoadJson<PrivateProgress>("slot-1", "copied", out var copied), Is.True);
+            Assert.That(copied.GetScore(), Is.EqualTo(42));
+        }
+
+        [Test]
+        [Category("ProductionPlayer")]
+        public void SerializedTypeMetadataCannotSelectRuntimeTypes()
+        {
+            byte[] payload = Encoding.UTF8.GetBytes("{\"$type\":\"System.Version, mscorlib\",\"level\":8}");
+            store.Save("slot-1", "progress", payload);
+            Assert.Throws<InvalidDataException>(() => store.TryLoadJson<Progress>("slot-1", "progress", out _));
+            Assert.That(store.TryLoad("slot-1", "progress", out var retained), Is.True);
+            Assert.That(retained.Payload, Is.EqualTo(payload));
         }
 
         [Test]

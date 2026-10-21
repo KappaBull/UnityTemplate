@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.IO;
 using SQLite;
 using UnityEngine;
@@ -11,7 +10,6 @@ namespace Kappa
     internal sealed class SQLiteSaveBackend : IDisposable
     {
         private const int DatabaseVersion = 1;
-        private static readonly System.Text.Encoding Utf8 = new System.Text.UTF8Encoding(false, true);
         private readonly object gate = new object();
         private readonly string directory;
         private SQLiteConnection connection;
@@ -104,28 +102,18 @@ namespace Kappa
 
         public void SaveJson<T>(string slot, string key, T data, int version = 1) where T : class
         {
-            ValidateJsonType<T>();
-            if (data == null) throw new ArgumentNullException(nameof(data));
-            Save(slot, key, Utf8.GetBytes(JsonUtility.ToJson(data)), version);
+            Save(slot, key, SaveJsonCodec.Encode(data), version);
         }
 
         public bool TryLoadJson<T>(string slot, string key, out T data, int expectedVersion = 1) where T : class
         {
-            ValidateJsonType<T>();
+            SaveJsonCodec.ValidateType<T>();
             if (expectedVersion < 1) throw new ArgumentOutOfRangeException(nameof(expectedVersion));
             data = null;
             if (!TryLoad(slot, key, out var saved)) return false;
             if (saved.Version != expectedVersion)
                 throw new InvalidDataException($"Save version {saved.Version} does not match expected version {expectedVersion}.");
-            try
-            {
-                data = JsonUtility.FromJson<T>(Utf8.GetString(saved.Payload));
-                if (data == null) throw new InvalidDataException("Save payload is empty.");
-            }
-            catch (ArgumentException exception)
-            {
-                throw new InvalidDataException("Save payload could not be decoded.", exception);
-            }
+            data = SaveJsonCodec.Decode<T>(saved.Payload);
             return true;
         }
 
@@ -195,14 +183,6 @@ namespace Kappa
                 if (!(character >= 'a' && character <= 'z') && !(character >= 'A' && character <= 'Z') &&
                     !(character >= '0' && character <= '9') && character != '-' && character != '_')
                     throw new ArgumentException("Use letters, numbers, hyphens or underscores in names.", parameter);
-        }
-
-        private static void ValidateJsonType<T>()
-        {
-            var type = typeof(T);
-            if (!type.IsSerializable || type == typeof(string) || typeof(IEnumerable).IsAssignableFrom(type) ||
-                typeof(UnityEngine.Object).IsAssignableFrom(type))
-                throw new ArgumentException("Use a serializable data class for JSON saves, or use the byte API with another serializer.");
         }
 
         [UnityEngine.Scripting.Preserve]

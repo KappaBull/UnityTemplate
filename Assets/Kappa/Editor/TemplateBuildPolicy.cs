@@ -12,7 +12,19 @@ namespace Kappa.Editor
     {
         public int callbackOrder => 0;
 
-        public void OnPreprocessBuild(BuildReport report) => Validate(report.summary.options, SaveEnvironmentSettings.Current);
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            Validate(report.summary.options, SaveEnvironmentSettings.Current);
+            ValidateScriptingBackend(report.summary.platform);
+        }
+
+        public static void ValidateScriptingBackend(BuildTarget target)
+        {
+            var group = UnityEditor.BuildPipeline.GetBuildTargetGroup(target);
+            if (group != BuildTargetGroup.Standalone && group != BuildTargetGroup.Android && group != BuildTargetGroup.iOS) return;
+            if (PlayerSettings.GetScriptingBackend(NamedBuildTarget.FromBuildTargetGroup(group)) != ScriptingImplementation.IL2CPP)
+                throw new BuildFailedException("Player builds require IL2CPP; Mono fallback is not allowed.");
+        }
 
         public static void Validate(BuildOptions options, SaveEnvironmentSettings settings)
         {

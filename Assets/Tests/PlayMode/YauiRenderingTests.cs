@@ -1,4 +1,6 @@
 using System.Collections;
+using System.IO;
+using Environment = System.Environment;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -7,18 +9,20 @@ using Yaui;
 
 namespace UnityTemplate.Tests.PlayMode
 {
+    [Category("ProductionPlayer")]
     public class YauiRenderingTests
     {
         [UnityTest]
         public IEnumerator WorldPanelDrawsConfiguredColorToRenderTexture()
         {
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
-                Assert.Ignore("YAUI pixel validation requires a graphics device; run locally without -nographics.");
+            Assert.That(SystemInfo.graphicsDeviceType, Is.Not.EqualTo(GraphicsDeviceType.Null),
+                "YAUI pixel validation requires a graphics device; do not run this suite with -nographics.");
 
             Assert.That(GraphicsSettings.currentRenderPipeline, Is.Not.Null,
                 "YAUI requires an active Universal Render Pipeline.");
             var cameraObject = new GameObject("Test YAUI Camera", typeof(Camera));
             var camera = cameraObject.GetComponent<Camera>();
+            camera.enabled = false;
             cameraObject.transform.position = new Vector3(0, 0, -10);
             camera.orthographic = true;
             camera.orthographicSize = 0.5f;
@@ -36,10 +40,13 @@ namespace UnityTemplate.Tests.PlayMode
                 panel.WorldScale = 0.001f;
                 panel.EventCamera = camera;
                 panel.GetComponent<YauiElement>().BackgroundColor = Color.magenta;
+                yield return null;
                 YauiPanel.ForceUpdate();
-
-                yield return null;
-                yield return null;
+                Assert.That(panel.DrawCallCount, Is.GreaterThan(0));
+                // バッチ実行の自動描画に依存せず、通常のURP経路へ描画を要求する。
+                var request = new RenderPipeline.StandardRequest { destination = target };
+                Assert.That(RenderPipeline.SupportsRenderRequest(camera, request), Is.True);
+                RenderPipeline.SubmitRenderRequest(camera, request);
                 capture = new Texture2D(128, 128, TextureFormat.RGB24, false);
                 var previousTarget = RenderTexture.active;
                 try
@@ -53,6 +60,9 @@ namespace UnityTemplate.Tests.PlayMode
                     RenderTexture.active = previousTarget;
                 }
                 var center = capture.GetPixel(capture.width / 2, capture.height / 2);
+                string report = Environment.GetEnvironmentVariable("UNITY_TEMPLATE_PLAYER_RESULTS");
+                if (!string.IsNullOrEmpty(report))
+                    File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(report), "yaui-render.png"), capture.EncodeToPNG());
 
                 Assert.That(center.r, Is.GreaterThan(0.8f));
                 Assert.That(center.g, Is.LessThan(0.2f));

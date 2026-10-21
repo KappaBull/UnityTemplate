@@ -2,7 +2,7 @@
   "_name": "Development",
   "_postBuildConfigurations": [],
   "_internalPrepareConfigurations": [],
-  "_preBuildConfigurations": [{ "rid": 1000 }, { "rid": 1001 }, { "rid": 1002 }],
+  "_preBuildConfigurations": [{ "rid": 1000 }, { "rid": 1001 }, { "rid": 1002 }, { "rid": 1003 }],
   "_baseSchemeName": "",
   "references": {
     "version": 2,
@@ -29,7 +29,23 @@
         "ns": "BuildMagicEditor.BuiltIn",
         "asm": "BuildMagic.Editor"
       },
-      "data": { "_value": { "pairs": [{ "key": { "_name": "Standalone" }, "value": "com.DefaultCompany.UnityTemplate.development" }] } }
+      "data": { "_value": { "pairs": [
+        { "key": { "_name": "Standalone" }, "value": "com.DefaultCompany.UnityTemplate.development" },
+        { "key": { "_name": "Android" }, "value": "com.DefaultCompany.UnityTemplate.development" },
+        { "key": { "_name": "iPhone" }, "value": "com.DefaultCompany.UnityTemplate.development" }
+      ] } }
+    }, {
+      "rid": 1003,
+      "type": {
+        "class": "PlayerSettingsSetScriptingBackendTaskConfiguration",
+        "ns": "BuildMagicEditor.BuiltIn",
+        "asm": "BuildMagic.Editor"
+      },
+      "data": { "_value": { "pairs": [
+        { "key": { "_name": "Standalone" }, "value": 1 },
+        { "key": { "_name": "Android" }, "value": 1 },
+        { "key": { "_name": "iPhone" }, "value": 1 }
+      ] } }
     }]
   }
 }

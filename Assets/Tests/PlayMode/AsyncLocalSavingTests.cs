@@ -10,6 +10,7 @@ using UnityEngine.TestTools;
 
 namespace UnityTemplate.Tests.PlayMode
 {
+    [Category("ProductionPlayer")]
     public class AsyncLocalSavingTests
     {
         private string directory;
@@ -19,9 +20,21 @@ namespace UnityTemplate.Tests.PlayMode
         [Serializable]
         public class Progress { public int level; public string name; }
 
+        [Serializable]
+        public class SnapshotProgress { public Progress progress; public int[] inventory; }
+
         [UnitySetUp]
         public IEnumerator SetUp() => UniTask.ToCoroutine(async () =>
         {
+            if (!Application.isEditor)
+            {
+#if !ENABLE_IL2CPP
+                Assert.Fail("Production Player tests require the IL2CPP scripting backend.");
+#endif
+                Assert.That(Debug.isDebugBuild, Is.False, "Run player saving tests with -productionPlayerTests.");
+                Assert.That(SaveEnvironmentSettings.IsProductionPlayer, Is.True);
+                Assert.That(SaveEnvironmentSettings.Current.Environment, Is.EqualTo(SaveEnvironment.Production));
+            }
             directory = Path.Combine(Path.GetTempPath(), "unity-async-save-tests-" + Guid.NewGuid().ToString("N"));
             configuration = ScriptableObject.CreateInstance<SaveEnvironmentSettings>();
             store = await LocalSaveStore.OpenAsync(directory, configuration: configuration);
@@ -58,6 +71,32 @@ namespace UnityTemplate.Tests.PlayMode
             Assert.That(loaded.Data.level, Is.EqualTo(12));
             Assert.That(loaded.Data.name, Is.EqualTo("非同期保存"));
             Assert.That(PlayerLoopHelper.IsMainThread, Is.True);
+        });
+
+        [UnityTest]
+        public IEnumerator DefaultPersistentDirectorySavesAndReopensUsingBundledSettings() => UniTask.ToCoroutine(async () =>
+        {
+            string name = "test-" + Guid.NewGuid().ToString("N");
+            string path = Path.GetFullPath(Path.Combine(SaveEnvironmentSettings.Current.GetDefaultDirectory(), name + ".sqlite3"));
+            Assert.That(File.Exists(path), Is.False);
+            LocalSaveStore persistent = null;
+            try
+            {
+                persistent = await LocalSaveStore.OpenAsync(databaseName: name);
+                Assert.That(persistent.DatabasePath, Is.EqualTo(path));
+                await persistent.SaveJsonAsync("slot-1", "progress", new Progress { level = 42, name = "永続保存" });
+                await persistent.DisposeAsync();
+                persistent = await LocalSaveStore.OpenAsync(databaseName: name);
+                var loaded = await persistent.TryLoadJsonAsync<Progress>("slot-1", "progress");
+                Assert.That(loaded.Found, Is.True);
+                Assert.That(loaded.Data.level, Is.EqualTo(42));
+                Assert.That(loaded.Data.name, Is.EqualTo("永続保存"));
+            }
+            finally
+            {
+                if (persistent != null) await persistent.DisposeAsync();
+                if (File.Exists(path)) File.Delete(path);
+            }
         });
 
         [UnityTest]
@@ -134,6 +173,43 @@ namespace UnityTemplate.Tests.PlayMode
         });
 
         [UnityTest]
+        public IEnumerator AsyncVoidTransactionIsRejectedBeforeAnyWrite() =>
+            UniTask.ToCoroutine(() => VerifyAsyncTransactionRejected(false));
+
+        [UnityTest]
+        public IEnumerator AsyncVoidInsideCombinedCallbackIsAlsoRejectedBeforeAnyWrite() =>
+            UniTask.ToCoroutine(() => VerifyAsyncTransactionRejected(true));
+
+        private async UniTask VerifyAsyncTransactionRejected(bool combined)
+        {
+            var release = new System.Threading.Tasks.TaskCompletionSource<bool>(System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);
+            var finished = new System.Threading.Tasks.TaskCompletionSource<bool>(System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);
+            int invoked = 0;
+            Action<LocalSaveStore.Transaction> update = async save =>
+            {
+                Interlocked.Exchange(ref invoked, 1);
+                save.Save("slot-1", "partial", new byte[] { 1 });
+                await release.Task;
+                finished.TrySetResult(true);
+            };
+            if (combined) update += save => save.Save("slot-1", "following-callback", new byte[] { 2 });
+            bool rejected = false;
+            try { await store.RunTransactionAsync(update); }
+            catch (ArgumentException) { rejected = true; }
+            finally
+            {
+                release.TrySetResult(true);
+                if (Volatile.Read(ref invoked) != 0) await finished.Task;
+            }
+            Assert.That(rejected, Is.True, "Async void must be rejected before starting a synchronous transaction.");
+            Assert.That(Volatile.Read(ref invoked), Is.Zero);
+            Assert.That((await store.TryLoadAsync("slot-1", "partial")).Found, Is.False);
+            Assert.That((await store.TryLoadAsync("slot-1", "following-callback")).Found, Is.False);
+            await store.SaveAsync("slot-1", "after-rejection", new byte[] { 3 });
+            Assert.That((await store.TryLoadAsync("slot-1", "after-rejection")).Found, Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator FailedTransactionRollsBackAndQueueContinues() => UniTask.ToCoroutine(async () =>
         {
             var failed = store.RunTransactionAsync(save =>
@@ -186,6 +262,36 @@ namespace UnityTemplate.Tests.PlayMode
             finally { release.Set(); await blocker; }
             await saved;
             Assert.That((await store.TryLoadAsync("slot-1", "value")).Data.Payload, Is.EqualTo(new byte[] { 1, 2 }));
+        });
+
+        [UnityTest]
+        public IEnumerator JsonSaveCapturesNestedDataBeforeQueuing() => UniTask.ToCoroutine(async () =>
+        {
+            using var entered = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
+            var blocker = store.RunTransactionAsync(_ => { entered.Set(); WaitForRelease(release); });
+            var data = new SnapshotProgress
+            {
+                progress = new Progress { level = 12, name = "保存要求時" },
+                inventory = new[] { 1, 2 }
+            };
+            var saved = store.SaveJsonAsync("slot-1", "progress", data);
+            try
+            {
+                await WaitForWorker(entered);
+                data.progress.level = 99;
+                data.progress.name = "保存要求後";
+                data.inventory[0] = 9;
+            }
+            finally { release.Set(); await blocker; }
+            await saved;
+            await store.DisposeAsync();
+            store = await LocalSaveStore.OpenAsync(directory, configuration: configuration);
+            var loaded = await store.TryLoadJsonAsync<SnapshotProgress>("slot-1", "progress");
+            Assert.That(loaded.Found, Is.True);
+            Assert.That(loaded.Data.progress.level, Is.EqualTo(12));
+            Assert.That(loaded.Data.progress.name, Is.EqualTo("保存要求時"));
+            Assert.That(loaded.Data.inventory, Is.EqualTo(new[] { 1, 2 }));
         });
 
         [UnityTest]
@@ -250,7 +356,7 @@ namespace UnityTemplate.Tests.PlayMode
             finally { await beta.DisposeAsync(); }
             int workerThread = 0;
             int mainThread = Thread.CurrentThread.ManagedThreadId;
-            var result = await BetaSaveImport.ImportAsync((slot, key, version) =>
+            var result = await BetaSaveImport.ImportAsync(Path.Combine(directory, "Beta", "save-data.sqlite3"), (slot, key, version) =>
             {
                 workerThread = Thread.CurrentThread.ManagedThreadId;
                 return key == "progress" && version == 1;

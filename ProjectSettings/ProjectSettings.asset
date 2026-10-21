@@ -875,6 +875,7 @@ PlayerSettings:
   scriptingBackend:
     Android: 1
     Standalone: 1
+    iPhone: 1
   il2cppCompilerConfiguration: {}
   il2cppCodeGeneration: {}
   il2cppLTOMode: {}

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
@@ -38,8 +39,14 @@ namespace Kappa
             return Enqueue(save => { save.Save(slot, key, snapshot, version); return true; }, cancellationToken).AsUniTask();
         }
 
-        public UniTask SaveJsonAsync<T>(string slot, string key, T data, int version = 1, CancellationToken cancellationToken = default) where T : class =>
-            Enqueue(save => { save.SaveJson(slot, key, data, version); return true; }, cancellationToken).AsUniTask();
+        public UniTask SaveJsonAsync<T>(string slot, string key, T data, int version = 1, CancellationToken cancellationToken = default) where T : class
+        {
+            EnsureMainThread();
+            if (closing) throw new ObjectDisposedException(nameof(LocalSaveStore));
+            // 呼び出し元のデータをワーカーと共有せず、保存要求時点の内容を確定する。
+            byte[] snapshot = SaveJsonCodec.Encode(data);
+            return Enqueue(save => { save.Save(slot, key, snapshot, version); return true; }, cancellationToken).AsUniTask();
+        }
 
         public UniTask<(bool Found, SaveData Data)> TryLoadAsync(string slot, string key, CancellationToken cancellationToken = default) =>
             Enqueue(save =>
@@ -64,6 +71,10 @@ namespace Kappa
         public UniTask RunTransactionAsync(Action<Transaction> update, CancellationToken cancellationToken = default)
         {
             if (update == null) throw new ArgumentNullException(nameof(update));
+            // async voidは最初のawaitで戻るため、未完了の更新を確定させる前に拒否する。
+            foreach (var callback in update.GetInvocationList())
+                if (callback.Method.IsDefined(typeof(AsyncStateMachineAttribute), false))
+                    throw new ArgumentException("Transaction callbacks must be synchronous. Await other work before starting the transaction.", nameof(update));
             return Enqueue(save =>
             {
                 var transaction = new Transaction(save);

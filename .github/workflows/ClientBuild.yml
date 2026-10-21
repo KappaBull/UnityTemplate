@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   test-macos:
-    name: Test Runner (EditMode + PlayMode)
+    name: Test Runner (Editor + Production Player)
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -78,8 +78,9 @@ jobs:
           mkdir -p TestResults
           unity test . \
             --mode EditMode \
-            --report-format junit \
+            --report-format nunit,junit \
             --output TestResults/editmode.xml \
+            --junit-output TestResults/editmode-junit.xml \
             --allow-install \
             --timeout 1200 \
             --non-interactive \
@@ -91,10 +92,72 @@ jobs:
           set -euo pipefail
           unity test . \
             --mode PlayMode \
-            --report-format junit \
+            --report-format nunit,junit \
             --output TestResults/playmode.xml \
+            --junit-output TestResults/playmode-junit.xml \
             --timeout 1200 \
             --non-interactive
+
+      - name: Validate Editor test reports
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          for mode in ("editmode", "playmode"):
+              result = ET.parse(Path("TestResults", mode + ".xml")).getroot()
+              assert result.tag == "test-run", result.tag
+              assert result.get("result") == "Passed", result.attrib
+              total = int(result.get("total", "0"))
+              assert total > 0, f"No {mode} tests ran"
+              assert int(result.get("passed", "0")) == total, result.attrib
+              assert int(result.get("failed", "0")) == 0, result.attrib
+              assert int(result.get("skipped", "0")) == 0, result.attrib
+              print(f"{mode}: {total} tests passed")
+          PY
+
+      - name: Run Production Player tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          unity_version="$(sed -n 's/^m_EditorVersion: //p' ProjectSettings/ProjectVersion.txt | tr -d '\r')"
+          editor_root="$(unity editors path "$unity_version" --quiet --no-banner)"
+          editor="$editor_root/Unity.app/Contents/MacOS/Unity"
+          if [[ ! -x "$editor" ]]; then
+            echo "::error::Unity Editor executable was not found"
+            exit 1
+          fi
+          "$editor" -batchmode -projectPath "$GITHUB_WORKSPACE" \
+            -runTests -testPlatform StandaloneOSX \
+            -testCategory ProductionPlayer -productionPlayerTests \
+            -buildPlayerPath "$RUNNER_TEMP/ProductionPlayerTests" \
+            -logFile TestResults/production-player-editor.log
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import xml.etree.ElementTree as ET
+
+          player = Path(os.environ["RUNNER_TEMP"], "ProductionPlayerTests", "PlayerWithTests",
+                        "PlayerWithTests.app", "Contents", "MacOS", "PlayerWithTests")
+          report = Path("TestResults/production-player.xml").resolve()
+          log = Path("TestResults/production-player.log").resolve()
+          env = dict(os.environ, UNITY_TEMPLATE_PLAYER_RESULTS=str(report))
+          subprocess.run([str(player), "-batchmode", "-logFile", str(log)],
+                         env=env, check=True, timeout=180)
+          result = ET.parse(report).getroot()
+          assert result.get("result") == "Passed", result.attrib
+          assert int(result.get("total", "0")) > 0, "No Production Player tests ran"
+          assert int(result.get("failed", "0")) == 0, result.attrib
+          assert int(result.get("skipped", "0")) == 0, result.attrib
+          print(f"Production Player: {result.get('passed')} tests passed")
+          PY
+          if grep -Eiq 'Crash!!!|Aborting batchmode due to failure|Failed to initialize|(^|[[:space:]])[[:alnum:]_.]*Exception:|Assertion failed|Shader error' TestResults/production-player.log; then
+            echo "::error::Production test player reported a runtime failure"
+            cat TestResults/production-player.log
+            exit 1
+          fi
 
       - name: Upload test results
         if: always()
@@ -112,6 +175,98 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: game-ci return-license . --targetPlatform StandaloneOSX --unityLicensingMethod personal
+
+  build-mobile:
+    name: ${{ matrix.checkName }} (no device tests)
+    needs: test-macos
+    runs-on: macos-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - targetPlatform: Android
+            checkName: Build Android package
+          - targetPlatform: iOS
+            checkName: Export iOS Xcode project
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v6
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ runner.os }}-${{ matrix.targetPlatform }}-
+
+      - name: Build project with Production scheme
+        uses: game-ci/unity-builder@v6
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          cliVersion: v0.1.72
+          targetPlatform: ${{ matrix.targetPlatform }}
+          buildMethod: BuildCI.BuildClientCMD
+          customParameters: -buildMagicScheme Production
+          cacheUnityInstallationOnMac: true
+
+      - name: Verify mobile output
+        shell: bash
+        env:
+          TARGET_PLATFORM: ${{ matrix.targetPlatform }}
+        run: |
+          set -euo pipefail
+          case "$TARGET_PLATFORM" in
+            Android)
+              package="$(find Build-Android -type f \( -name '*.apk' -o -name '*.aab' \) -print -quit)"
+              if [[ -z "$package" || ! -s "$package" ]]; then
+                echo "::error::Android package was not produced"
+                exit 1
+              fi
+              ;;
+            iOS)
+              test -s Build-iOS/Unity-iPhone.xcodeproj/project.pbxproj
+              test -s Build-iOS/Info.plist
+              ;;
+            *) exit 1 ;;
+          esac
+
+      - name: Upload mobile build
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.targetPlatform }}-${{ github.run_number }}
+          path: Build-${{ matrix.targetPlatform }}
+          if-no-files-found: error
+          retention-days: 14
+
+  required-checks:
+    name: Unity required checks
+    if: always()
+    needs: [test-macos, build-macos, build-mobile]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every validation job to succeed
+        shell: bash
+        env:
+          TEST_RESULT: ${{ needs.test-macos.result }}
+          MACOS_RESULT: ${{ needs.build-macos.result }}
+          MOBILE_RESULT: ${{ needs.build-mobile.result }}
+        run: |
+          set -euo pipefail
+          for result in "$TEST_RESULT" "$MACOS_RESULT" "$MOBILE_RESULT"; do
+            if [[ "$result" != success ]]; then
+              echo "::error::A required Unity job did not succeed ($result)"
+              exit 1
+            fi
+          done
 
   build-macos:
     name: Build and smoke test StandaloneOSX

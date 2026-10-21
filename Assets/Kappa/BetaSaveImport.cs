@@ -11,17 +11,22 @@ namespace Kappa
 
     public static class BetaSaveImport
     {
-        // ゲーム側が同意を得た後、製品用ストアを初めて開く前にだけ呼ぶ。起動時の自動実行はしない。
-        public static async UniTask<BetaSaveImportResult> ImportAsync(Func<string, string, int, bool> supportsVersion,
+        // 同意を得た後、製品用ストアを初めて開く前に呼ぶ。モバイルでは他アプリの保存先を探索せず、
+        // OSのファイル選択・共有などで読み取り可能になったセーブファイルを呼び出し側から渡す。
+        // supportsVersionはワーカー上で同期実行するため、Unity APIや共有するゲーム状態を参照しない。
+        public static async UniTask<BetaSaveImportResult> ImportAsync(string sourceDatabasePath, Func<string, string, int, bool> supportsVersion,
             string saveRoot = null, string databaseName = "save-data", SaveEnvironmentSettings configuration = null,
             CancellationToken cancellationToken = default)
         {
             LocalSaveStore.EnsureMainThread();
+            if (string.IsNullOrWhiteSpace(sourceDatabasePath) || !Path.IsPathRooted(sourceDatabasePath))
+                throw new ArgumentException("Selected beta save path must be absolute.", nameof(sourceDatabasePath));
+            string source = Path.GetFullPath(sourceDatabasePath);
             string root = ResolveRoot(supportsVersion, saveRoot, databaseName, configuration);
             return await UniTask.RunOnThreadPool(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                return ImportCore(supportsVersion, root, databaseName);
+                return ImportCore(supportsVersion, source, root, databaseName);
             });
         }
 
@@ -39,11 +44,10 @@ namespace Kappa
             return saveRoot;
         }
 
-        private static BetaSaveImportResult ImportCore(Func<string, string, int, bool> supportsVersion, string saveRoot, string databaseName)
+        private static BetaSaveImportResult ImportCore(Func<string, string, int, bool> supportsVersion, string source, string saveRoot, string databaseName)
         {
             string destination = Path.Combine(saveRoot, databaseName + ".sqlite3");
             if (File.Exists(destination)) return BetaSaveImportResult.DestinationExists;
-            string source = Path.Combine(SaveEnvironmentSettings.GetDirectory(saveRoot, SaveEnvironment.Beta), databaseName + ".sqlite3");
             if (!File.Exists(source)) return BetaSaveImportResult.SourceMissing;
 
             Directory.CreateDirectory(saveRoot);
