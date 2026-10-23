@@ -135,12 +135,19 @@ jobs:
             -logFile TestResults/production-player-editor.log
           python3 - <<'PY'
           import os
+          import plistlib
           from pathlib import Path
           import subprocess
           import xml.etree.ElementTree as ET
 
-          player = Path(os.environ["RUNNER_TEMP"], "ProductionPlayerTests", "PlayerWithTests",
-                        "PlayerWithTests.app", "Contents", "MacOS", "PlayerWithTests")
+          app = Path(os.environ["RUNNER_TEMP"], "ProductionPlayerTests", "PlayerWithTests", "PlayerWithTests.app")
+          with (app / "Contents" / "Info.plist").open("rb") as info:
+              executable = plistlib.load(info).get("CFBundleExecutable")
+          if not isinstance(executable, str) or executable in ("", ".", "..") or "/" in executable or "\\" in executable:
+              raise ValueError("Invalid CFBundleExecutable in test player bundle")
+          player = app / "Contents" / "MacOS" / executable
+          if not player.is_file():
+              raise FileNotFoundError(f"Test player executable was not produced: {player}")
           report = Path("TestResults/production-player.xml").resolve()
           log = Path("TestResults/production-player.log").resolve()
           env = dict(os.environ, UNITY_TEMPLATE_PLAYER_RESULTS=str(report))
