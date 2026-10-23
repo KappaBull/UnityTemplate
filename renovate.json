@@ -1,0 +1,70 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "enabledManagers": [
+    "custom.regex",
+    "github-actions",
+    "unity3d"
+  ],
+  "schedule": [
+    "before 5am on monday"
+  ],
+  "timezone": "Asia/Tokyo",
+  "labels": [
+    "dependencies"
+  ],
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": false,
+  "ignoreTests": false,
+  "packageRules": [
+    {
+      "description": "Track Unity Editor beta and supported releases",
+      "matchManagers": [
+        "unity3d"
+      ],
+      "registryUrls": [
+        "https://services.api.unity.com/unity/editor/release/v1/releases?stream=BETA",
+        "https://services.api.unity.com/unity/editor/release/v1/releases?stream=TECH",
+        "https://services.api.unity.com/unity/editor/release/v1/releases?stream=LTS"
+      ]
+    },
+    {
+      "description": "Unity built-in modules follow the Editor version",
+      "matchPackageNames": [
+        "/^com\\.unity\\.modules\\./"
+      ],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update packages from the Unity package registry",
+      "managerFilePatterns": [
+        "/^Packages/manifest\\.json$/"
+      ],
+      "matchStrings": [
+        "\\\"(?<depName>com\\.unity\\.[^\\\"]+)\\\"\\s*:\\s*\\\"(?<currentValue>\\d+\\.\\d+\\.\\d+(?:-[^\\\"]+)?)\\\""
+      ],
+      "datasourceTemplate": "unity3d-packages",
+      "versioningTemplate": "unity3d-packages"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Unity packages referenced by GitHub tags",
+      "managerFilePatterns": [
+        "/^Packages/manifest\\.json$/"
+      ],
+      "matchStrings": [
+        "\\\"(?<depName>[^\\\"]+)\\\"\\s*:\\s*\\\"https://github\\.com/(?<packageName>[^/\\\"]+/[^?#\\\"]+?)(?:\\.git)?(?:\\?path=[^#\\\"]+)?#(?<currentValue>v?\\d+\\.\\d+\\.\\d+(?:-[^\\\"]+)?)\\\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver-coerced"
+    }
+  ]
+}

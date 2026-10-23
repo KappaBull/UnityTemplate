@@ -1,0 +1,27 @@
+{
+  "name": "UnityTemplate.EditModeTests",
+  "rootNamespace": "UnityTemplate.Tests.EditMode",
+  "references": [
+    "Kappa.Editor",
+    "BuildMagic.Editor",
+    "Kappa.Runtime",
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework",
+    "Yaui",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

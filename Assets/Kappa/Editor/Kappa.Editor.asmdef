@@ -1,0 +1,5 @@
+{
+  "name": "Kappa.Editor",
+  "references": ["Kappa.Runtime", "BuildMagic.Editor"],
+  "includePlatforms": ["Editor"]
+}
