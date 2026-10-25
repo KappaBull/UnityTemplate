@@ -39,7 +39,8 @@ namespace UnityTemplate.Tests.PlayMode
                 panel.ReferenceResolution = new Vector2(1000, 1000);
                 panel.WorldScale = 0.001f;
                 panel.EventCamera = camera;
-                panel.GetComponent<YauiElement>().BackgroundColor = Color.magenta;
+                // エラーシェーダーのマゼンタを正常な描画として受け入れない。
+                panel.GetComponent<YauiElement>().BackgroundColor = Color.green;
                 yield return null;
                 YauiPanel.ForceUpdate();
                 Assert.That(panel.DrawCallCount, Is.GreaterThan(0));
@@ -64,9 +65,9 @@ namespace UnityTemplate.Tests.PlayMode
                 if (!string.IsNullOrEmpty(report))
                     File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(report), "yaui-render.png"), capture.EncodeToPNG());
 
-                Assert.That(center.r, Is.GreaterThan(0.8f));
-                Assert.That(center.g, Is.LessThan(0.2f));
-                Assert.That(center.b, Is.GreaterThan(0.8f));
+                Assert.That(center.r, Is.LessThan(0.2f));
+                Assert.That(center.g, Is.GreaterThan(0.8f));
+                Assert.That(center.b, Is.LessThan(0.2f));
             }
             finally
             {
