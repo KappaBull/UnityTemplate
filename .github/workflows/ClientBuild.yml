@@ -18,8 +18,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: unity-build-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: unity-personal
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   test-macos:
