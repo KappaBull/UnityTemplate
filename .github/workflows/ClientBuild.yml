@@ -381,6 +381,13 @@ jobs:
             throw 'Pinned GameCI launch implementation changed'
           }
           Set-Content -LiteralPath $resolver -Value ([regex]::Replace($source, $launch, '    & $ExePath @Arguments | Out-Host')) -Encoding utf8
+          $returnScript = Join-Path $steps 'return_license.ps1'
+          $source = Get-Content -LiteralPath $returnScript -Raw
+          $returnArguments = ' -quit -returnlicense '
+          if ([regex]::Matches($source, [regex]::Escape($returnArguments)).Count -ne 2) {
+            throw 'Pinned GameCI license return arguments changed'
+          }
+          Set-Content -LiteralPath $returnScript -Value ($source.Replace($returnArguments, ' -batchmode -nographics -quit -returnlicense ')) -Encoding utf8
           $scratch = Join-Path $env:RUNNER_TEMP 'unity-license-project'
           New-Item -ItemType Directory -Force -Path $scratch | Out-Null
           "STEPS_DIR=$steps" >> $env:GITHUB_ENV
@@ -448,15 +455,6 @@ jobs:
             if (-not $player.HasExited) { $player.Kill(); $player.WaitForExit() }
           }
 
-      - name: Return Unity Personal license
-        if: always() && steps.licensing.outcome == 'success'
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        run: |
-          . (Join-Path $env:STEPS_DIR 'return_license.ps1')
-          if ($null -eq $ReturnExitCode -or $ReturnExitCode -ne 0) { throw 'Unity license return was not confirmed' }
-
       - name: Upload Windows test results and build
         if: always()
         uses: actions/upload-artifact@v7
@@ -467,3 +465,30 @@ jobs:
             Build-StandaloneWindows64
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Return Unity Personal license
+        if: always() && steps.licensing.outcome == 'success'
+        timeout-minutes: 10
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          . (Join-Path $env:STEPS_DIR 'return_license.ps1')
+          if ($null -eq $ReturnExitCode -or $ReturnExitCode -ne 0 -or $ReturnText -notmatch $SuccessPattern) {
+            throw 'Unity license return was not confirmed'
+          }
+          exit $ReturnExitCode
+
+      - name: Report license return diagnostics
+        if: always() && steps.licensing.outcome == 'success'
+        run: |
+          $returnLog = Join-Path $env:ACTIVATE_LICENSE_PATH 'return_license.log'
+          if (Test-Path -LiteralPath $returnLog) {
+            # 認証情報を含み得るログ全体ではなく、既知の結果メッセージだけを出す。
+            $pattern = 'Successfully returned ULF license|Successfully returned floating license|Successfully returned the entitlement license|License has been returned|Ulf license file not found|Machine bindings don''t match|TimeoutPolicy did not complete|Serial number unavailable for ULF return'
+            $signals = [regex]::Matches((Get-Content -LiteralPath $returnLog -Raw), $pattern)
+            Write-Host "License return log exists; known result messages: $($signals.Value -join '; ')"
+          } else {
+            Write-Host 'No license return Editor log was produced'
+          }
+          Get-Process -Name Unity -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, Responding | Format-Table
