@@ -1,0 +1,24 @@
+{
+  "name": "UnityTemplate.PlayModeTests",
+  "rootNamespace": "UnityTemplate.Tests.PlayMode",
+  "references": [
+    "Kappa.Runtime",
+    "Gilzoide.SqliteNet",
+    "UniTask",
+    "Unity.Cinemachine",
+    "Unity.Timeline",
+    "Yaui"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

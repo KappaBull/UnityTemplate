@@ -1,0 +1,4 @@
+{
+  "name": "Kappa.Runtime",
+  "references": ["Yaui", "Gilzoide.SqliteNet", "UniTask"]
+}

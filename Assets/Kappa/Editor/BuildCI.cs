@@ -23,6 +23,19 @@ public class BuildCI : Editor
     /// </summary>
     private static void BuildClientCMD()
     {
+        string[] arguments = Environment.GetCommandLineArgs();
+        int schemeIndex = Array.IndexOf(arguments, "-buildMagicScheme");
+        if (schemeIndex >= 0 && (schemeIndex + 1 == arguments.Length || arguments[schemeIndex + 1].StartsWith("-")))
+            throw new UnityEditor.Build.BuildFailedException("-buildMagicScheme requires a scheme name.");
+        string scheme = schemeIndex < 0 ? "Production" : arguments[schemeIndex + 1];
+        var buildSummary = BuildPipeline.BuildPlayer(CreateProductionBuildOptions(scheme)).summary;
+        ReportSummary(buildSummary);
+        ExitWithResult(buildSummary.result);
+    }
+
+    public static BuildPlayerOptions CreateProductionBuildOptions(string scheme = "Production")
+    {
+        Kappa.Editor.TemplateBuildPolicy.ApplyProductionScheme(scheme);
         var nowTarget = EditorUserBuildSettings.activeBuildTarget;
         var buildPath = "Build-" + nowTarget.ToString();
         switch (nowTarget)
@@ -35,21 +48,20 @@ public class BuildCI : Editor
                 buildPath = buildPath + "/" + PlayerSettings.productName + ".exe";
                 break;
             case BuildTarget.StandaloneOSX:
+                buildPath = buildPath + "/" + PlayerSettings.productName + ".app";
+                break;
             case BuildTarget.StandaloneLinux64:
                 buildPath = buildPath + "/" + PlayerSettings.productName;
                 break;
         }
         
-        var buildPlayerOptions = new BuildPlayerOptions
+        return new BuildPlayerOptions
         {
             scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(s => s.path).ToArray(),
             target = nowTarget,
             locationPathName = buildPath,
+            options = BuildOptions.None,
         };
-
-        var buildSummary = BuildPipeline.BuildPlayer(buildPlayerOptions).summary;
-        ReportSummary(buildSummary);
-        ExitWithResult(buildSummary.result);
     }
 
     private static void ReportSummary(BuildSummary summary)

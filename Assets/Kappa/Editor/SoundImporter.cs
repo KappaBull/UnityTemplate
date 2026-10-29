@@ -1,47 +1,23 @@
-using System.Linq;
+using System;
 using UnityEditor;
 using UnityEngine;
 
 namespace Kappa.Editor
 {
-  public class SoundImporter : AssetPostprocessor
-  {
-    private void OnPreprocessAudio()
+    public class SoundImporter : AssetPostprocessor
     {
-      var checkList = new[]
-      {
-        "Assets/Audio/Action",
-        "Assets/Audio/Bgm"
-      };
-      if (!checkList.Any(folder => assetPath.Contains(folder))) return;
-
-      var audioImporter = assetImporter as AudioImporter;
-      if (audioImporter == null) return;
-      audioImporter.forceToMono = true;
-      audioImporter.loadInBackground = true;
-      audioImporter.preloadAudioData = false;
-      if (assetPath.Contains("Bgm"))
-      {
-        audioImporter.defaultSampleSettings = new AudioImporterSampleSettings()
+        private void OnPreprocessAudio()
         {
-          loadType = AudioClipLoadType.Streaming,
-          compressionFormat = AudioCompressionFormat.Vorbis,
-          quality = 100,
-          sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate,
-        };
-      }
-      else
-      {
-        audioImporter.defaultSampleSettings = new AudioImporterSampleSettings()
-        {
-          loadType = AudioClipLoadType.CompressedInMemory,
-          compressionFormat = AudioCompressionFormat.Vorbis,
-          quality = 100,
-          sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate,
-        };
-      }
+            bool isBgm = assetPath.StartsWith("Assets/Audio/BGM/", StringComparison.OrdinalIgnoreCase);
+            bool isAction = assetPath.StartsWith("Assets/Audio/Action/", StringComparison.OrdinalIgnoreCase);
+            if (!isBgm && !isAction) return;
 
+            var importer = (AudioImporter)assetImporter;
+            var settings = importer.defaultSampleSettings;
+            settings.loadType = isBgm ? AudioClipLoadType.Streaming : AudioClipLoadType.CompressedInMemory;
+            settings.preloadAudioData = false;
+            importer.defaultSampleSettings = settings;
+            importer.loadInBackground = true;
+        }
     }
-
-  }
 }

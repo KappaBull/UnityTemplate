@@ -4,6 +4,16 @@
 [Bb]uild-*
 [Ll]ogs/
 [Uu]serSettings/
+.env
+.env.*
+!.env.example
+*.ulf
+*.alf
+UnityEntitlementLicense.xml
+*.keystore
+*.jks
+*.p12
+*.pfx
 Assets/AssetStoreTools*
 
 # Visual Studio cache directory
@@ -35,7 +45,7 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
-  
+
 # OS generated
 .DS_Store
 .DS_Store?
