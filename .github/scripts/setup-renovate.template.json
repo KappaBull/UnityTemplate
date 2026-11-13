@@ -1,0 +1,21 @@
+{
+  "description": "Run dependency updates and validate them with this repository's CI",
+  "url": "https://github.com/{{repository}}",
+  "public": false,
+  "hook_attributes": {
+    "url": "https://github.com",
+    "active": false
+  },
+  "default_permissions": {
+    "administration": "read",
+    "checks": "write",
+    "contents": "write",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write",
+    "statuses": "write",
+    "vulnerability_alerts": "read",
+    "workflows": "write"
+  },
+  "default_events": []
+}

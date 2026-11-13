@@ -23,18 +23,42 @@ concurrency:
   queue: max
 
 jobs:
+  verify-actions-lock:
+    name: Verify setup and Actions lockfile
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Actions Lock
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh extension install github/gh-actions-lock --pin v0.4.1
+
+      - name: Test GitHub App setup
+        run: node --test .github/scripts/setup-renovate.test.mjs
+
+      - name: Verify locked actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh actions-lock --verify
+
   test-macos:
     name: Test Runner (Editor + Production Player)
+    needs: verify-actions-lock
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           lfs: true
 
       - name: Cache Unity Library
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: Library
           key: Library-${{ runner.os }}-Tests-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -169,7 +193,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: TestResults-${{ github.run_number }}
           path: TestResults
@@ -202,12 +226,12 @@ jobs:
             checkName: Export iOS Xcode project (no device tests)
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           lfs: true
 
       - name: Cache Unity Library
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: Library
           key: Library-${{ runner.os }}-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -215,7 +239,7 @@ jobs:
             Library-${{ runner.os }}-${{ matrix.targetPlatform }}-
 
       - name: Build project with Production scheme
-        uses: game-ci/unity-builder@v6
+        uses: game-ci/unity-builder@v6.0.0
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -293,7 +317,7 @@ jobs:
 
       - name: Upload build
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: ${{ matrix.targetPlatform }}-${{ github.run_number }}
           path: |
@@ -305,19 +329,20 @@ jobs:
   required-checks:
     name: Unity required checks
     if: always()
-    needs: [test-macos, build-player, test-windows]
-    runs-on: ubuntu-latest
+    needs: [verify-actions-lock, test-macos, build-player, test-windows]
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - name: Require every validation job to succeed
         shell: bash
         env:
+          ACTIONS_LOCK_RESULT: ${{ needs.verify-actions-lock.result }}
           TEST_RESULT: ${{ needs.test-macos.result }}
           BUILD_RESULT: ${{ needs.build-player.result }}
           WINDOWS_RESULT: ${{ needs.test-windows.result }}
         run: |
           set -euo pipefail
-          for result in "$TEST_RESULT" "$BUILD_RESULT" "$WINDOWS_RESULT"; do
+          for result in "$ACTIONS_LOCK_RESULT" "$TEST_RESULT" "$BUILD_RESULT" "$WINDOWS_RESULT"; do
             if [[ "$result" != success ]]; then
               echo "::error::A required Unity job did not succeed ($result)"
               exit 1
@@ -334,12 +359,12 @@ jobs:
         shell: pwsh
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           lfs: true
 
       - name: Cache Unity Library
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: Library
           key: Library-${{ runner.os }}-ProductionPlayer-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -457,7 +482,7 @@ jobs:
 
       - name: Upload Windows test results and build
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: Windows-IL2CPP-${{ github.run_number }}
           path: |

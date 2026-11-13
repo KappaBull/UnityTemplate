@@ -1,0 +1,6 @@
+[tools]
+node = "24.22.3"
+
+[tasks."renovate:setup"]
+description = "Create a Renovate GitHub App, register its credentials, and enable vulnerability alerts (requires authenticated gh)"
+run = "node .github/scripts/setup-renovate.mjs"

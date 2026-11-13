@@ -6,6 +6,7 @@
   "enabledManagers": [
     "custom.regex",
     "github-actions",
+    "mise",
     "unity3d"
   ],
   "schedule": [
@@ -21,6 +22,9 @@
   "automergeType": "pr",
   "platformAutomerge": false,
   "ignoreTests": false,
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "description": "Track Unity Editor beta and supported releases",
@@ -42,6 +46,32 @@
     }
   ],
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update the Actions Lock verifier",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/ClientBuild\\.yml$/"
+      ],
+      "matchStrings": [
+        "gh extension install github/gh-actions-lock --pin (?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "github/gh-actions-lock",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Update the self-hosted Renovate runtime",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/Renovate\\.yml$/"
+      ],
+      "matchStrings": [
+        "renovate-version:\\s*(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "ghcr.io/renovatebot/renovate",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
     {
       "customType": "regex",
       "description": "Update packages from the Unity package registry",
